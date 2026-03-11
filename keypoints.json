@@ -1,0 +1,4 @@
+[
+  {"name": "eye_top_center", "description": "the midpoint of the top eyelid margin, horizontally centered over the eye opening"},
+  {"name": "eye_bottom_center", "description": "the midpoint of the bottom eyelid margin, horizontally centered under the eye opening"}
+]

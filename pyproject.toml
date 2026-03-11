@@ -1,0 +1,24 @@
+[project]
+name = "auto-video-annotation"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "bjhardcastle", email = "ben.hardcastle@alleninstitute.org" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.40.0",
+    "numpy>=1.26.0",
+    "opencv-python-headless>=4.9.0",
+    "pillow>=10.0.0",
+    "pydantic-settings>=2.0.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+auto-video-annotation = "auto_video_annotation.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.10.7,<0.11.0"]
+build-backend = "uv_build"
