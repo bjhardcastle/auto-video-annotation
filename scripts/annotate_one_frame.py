@@ -24,7 +24,7 @@ DEFAULT_IMAGE = PROJECT_ROOT / ".scratch" / "Screenshot 2026-03-11 141017.png"
 DEFAULT_KEYPOINTS = PROJECT_ROOT / "keypoints.json"
 DEFAULT_OUTPUT_ROOT = PROJECT_ROOT / "output"
 DEFAULT_MODELS = ["sonnet-4-6", "sonnet-5", "opus-4-7", "opus-4-8", "fable-5"]
-WITH_KEYPOINT_DESCRIPTIONS = False
+WITH_KEYPOINT_DESCRIPTIONS = True
 
 
 def _model_id(provider: str, model: str) -> str:
