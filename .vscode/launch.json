@@ -1,0 +1,37 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "debug",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "C:/Users/ben.hardcastle/github/auto-video-annotation/src/auto_video_annotation/cli.py",
+            "console": "integratedTerminal",
+            "args": [
+                // "--video", "//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_832032_20260306/Nose_20260306T144718.mp4", 
+                "--video",
+                "s3://aind-open-data/ecephys_834408_2025-12-17_13-03-16/behavior-videos/Nose_20251217T130330.mp4",
+                // "--video-description",
+                // "Side-profile view of a mouse's left side during a lab experiment. The mouse is at the center of the frame with a running platform underneath it, a lick spout in the left of the frame, and a block above its head. The mouse's nose points to the left, its tail on the right.",
+                "--video-description",
+                "Side-profile view of the left side of a mouse's head. The mouse is pointing to the left of the frame. The right side of the mouse's face is not visible.",
+                "--log-level",
+                "DEBUG",
+                // "--viz-only", 
+                "--provider",
+                "anthropic",
+                "--model",
+                "claude-opus-4-6",
+                // "--provider",
+                // "google",
+                // "--model",
+                // "gemini-3.1-pro-preview"
+                // "gemini-3.1-flash-lite-preview"
+            ],
+            "justMyCode": false
+        }
+    ]
+}

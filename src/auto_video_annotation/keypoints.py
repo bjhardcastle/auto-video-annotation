@@ -46,6 +46,32 @@ def load_keypoints(path: Path) -> list[Keypoint]:
     return keypoints
 
 
+def load_annotations(path: Path) -> list[Annotation]:
+    """Load annotations from a JSONL file (one JSON object per line)."""
+    annotations: list[Annotation] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line:
+            annotations.append(Annotation.model_validate_json(line))
+    logger.info("Loaded %d annotations from %s", len(annotations), path)
+    return annotations
+
+
+def append_annotations(annotations: list[Annotation], path: Path) -> None:
+    """Append annotations to a JSONL file, one record per line.
+
+    Creates the file and parent directories if they do not exist.
+    Safe to call after each frame so partial results survive early termination.
+    """
+    if not annotations:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as f:
+        for ann in annotations:
+            f.write(ann.model_dump_json() + "\n")
+    logger.debug("Appended %d annotations to %s", len(annotations), path)
+
+
 def save_annotations(annotations: list[Annotation], path: Path) -> None:
     """Write annotations to a JSON file as an array of records."""
     path.parent.mkdir(parents=True, exist_ok=True)

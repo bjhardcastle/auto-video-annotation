@@ -52,7 +52,9 @@ def save_annotated_frames(
 
     for frame_number, frame in frames:
         annotated = frame.copy()
-        for ann in by_frame.get(frame_number, []):
+        frame_anns = by_frame.get(frame_number, [])
+        logger.info("Frame %d: drawing %d annotations", frame_number, len(frame_anns))
+        for ann in frame_anns:
             colour = colour_map[ann.keypoint]
             cx, cy = int(round(ann.x)), int(round(ann.y))
             cv2.circle(annotated, (cx, cy), _RADIUS, colour, _CIRCLE_THICKNESS)

@@ -16,9 +16,22 @@ dependencies = [
     "python-dotenv>=1.0.0",
 ]
 
+[project.optional-dependencies]
+openrouter = ["openai>=1.0.0"]
+google = ["google-genai>=1.0.0"]
+
 [project.scripts]
 auto-video-annotation = "auto_video_annotation.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.10.7,<0.11.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "auto-video-annotation[openrouter,google]",
+]
+
+[tool.uv]
+package = true
+default-groups = "all"

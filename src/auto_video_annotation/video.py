@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import urllib.parse
 from pathlib import Path
 
 import cv2
@@ -11,8 +12,30 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-def load_diverse_frames(video_path: Path, num_frames: int) -> list[tuple[int, np.ndarray]]:
-    """Open a video file and return a diverse subset of frames.
+def _resolve_video_source(video_path: Path | str) -> str:
+    """Return a string suitable for cv2.VideoCapture.
+
+    Converts ``s3://bucket/key`` to ``https://bucket.s3.amazonaws.com/key``
+    for open (public) S3 buckets.  Local paths are returned as POSIX strings.
+    """
+    s = str(video_path)
+    parsed = urllib.parse.urlparse(s)
+    if parsed.scheme == "s3":
+        bucket = parsed.netloc
+        key = parsed.path.lstrip("/")
+        url = f"https://{bucket}.s3.amazonaws.com/{key}"
+        logger.debug("Resolved S3 path %s → %s", s, url)
+        return url
+    if isinstance(video_path, Path):
+        return video_path.as_posix()
+    return s
+
+
+def load_diverse_frames(video_path: Path | str, num_frames: int) -> list[tuple[int, np.ndarray]]:
+    """Open a video file or public S3 URL and return a diverse subset of frames.
+
+    Accepts local ``Path`` objects or strings.  S3 paths (``s3://bucket/key``)
+    are converted to HTTPS URLs and streamed via FFmpeg/OpenCV.
 
     Uses greedy histogram-based selection to maximise visual variety:
     1. Sample ``num_frames * 5`` candidate frames uniformly.
@@ -22,23 +45,24 @@ def load_diverse_frames(video_path: Path, num_frames: int) -> list[tuple[int, np
     Returns:
         List of ``(frame_number, bgr_frame)`` tuples sorted by frame number.
     """
-    cap = cv2.VideoCapture(video_path.as_posix())
+    source = _resolve_video_source(video_path)
+    cap = cv2.VideoCapture(source)
     if not cap.isOpened():
-        raise ValueError(f"Cannot open video: {video_path}")
+        raise ValueError(f"Cannot open video: {source}")
 
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     if total_frames <= 0:
-        raise ValueError(f"Video has no readable frames: {video_path}")
+        raise ValueError(f"Video has no readable frames: {source}")
 
     logger.info(
         "Opened %s — total frames: %d, requesting %d diverse frames",
-        video_path,
+        source,
         total_frames,
         num_frames,
     )
 
     num_candidates = min(num_frames * 5, total_frames)
-    candidate_indices = np.linspace(0, total_frames - 1, num_candidates, dtype=int).tolist()
+    candidate_indices = np.linspace(10, total_frames - 1, num_candidates, dtype=int).tolist()
 
     candidates: list[tuple[int, np.ndarray]] = []
     for idx in candidate_indices:
