@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import logging
+from typing import Any
 
 import anthropic
 import numpy as np
@@ -19,6 +20,12 @@ _TOOL: anthropic.types.ToolParam = {
     "input_schema": annotate_module.TOOL_INPUT_SCHEMA,
 }
 
+_FORCED_TOOL_UNSUPPORTED_TEXT = "tool_choice forces tool use is not compatible with this model"
+_SYSTEM_PROMPT = (
+    f"Use the {annotate_module.TOOL_NAME} tool to record the requested keypoints. "
+    "Return all visible and non-visible keypoints through that tool; do not answer with prose."
+)
+
 
 class AnthropicRunner:
     """Locates keypoints in video frames using the Anthropic messages API."""
@@ -26,6 +33,7 @@ class AnthropicRunner:
     def __init__(self, model: str) -> None:
         self.model = model
         self._client = anthropic.Anthropic()
+        self._force_tool_choice = True
         logger.debug("AnthropicRunner initialised with model=%s", model)
 
     def annotate_frame(
@@ -46,12 +54,8 @@ class AnthropicRunner:
             frame_number, display_w, display_h, len(keypoints),
         )
 
-        response = self._client.messages.create(
-            model=self.model,
-            max_tokens=1024,
-            tools=[_TOOL],
-            tool_choice={"type": "any"},
-            messages=[
+        response = self._create_message(
+            [
                 {
                     "role": "user",
                     "content": [
@@ -66,7 +70,7 @@ class AnthropicRunner:
                         {"type": "text", "text": prompt},
                     ],
                 }
-            ],
+            ]
         )
 
         tool_use_block = next(
@@ -84,3 +88,33 @@ class AnthropicRunner:
             frame_number, len(annotations), len(keypoints),
         )
         return annotations
+
+    def _create_message(self, messages: list[dict[str, Any]]) -> anthropic.types.Message:
+        request: dict[str, Any] = {
+            "model": self.model,
+            "max_tokens": 1024,
+            "system": _SYSTEM_PROMPT,
+            "tools": [_TOOL],
+            "messages": messages,
+        }
+        if self._force_tool_choice:
+            request["tool_choice"] = {"type": "tool", "name": annotate_module.TOOL_NAME}
+
+        try:
+            return self._client.messages.create(**request)
+        except anthropic.BadRequestError as exc:
+            if not self._force_tool_choice or not _is_forced_tool_choice_unsupported(exc):
+                raise
+            logger.info(
+                "Anthropic model %s rejected forced tool use; retrying with default tool_choice=auto",
+                self.model,
+            )
+            self._force_tool_choice = False
+            request.pop("tool_choice", None)
+            return self._client.messages.create(**request)
+
+
+def _is_forced_tool_choice_unsupported(exc: anthropic.BadRequestError) -> bool:
+    error = exc.body.get("error") if isinstance(exc.body, dict) else None
+    message = error.get("message") if isinstance(error, dict) else exc.message
+    return isinstance(message, str) and _FORCED_TOOL_UNSUPPORTED_TEXT in message
